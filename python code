@@ -1,0 +1,173 @@
+from os import system
+import re
+import mysql.connector
+
+# Connect to the database (change the database name if required)
+con = mysql.connector.connect(
+    host="localhost", user="root", password="", database="student"
+)
+
+# Regular expressions for validating email and phone
+email_regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+phone_pattern = re.compile(r"(0|91)?[7-9][0-9]{9}")
+
+# Function to add a student
+def Add_Student():
+    print("{:>60}".format("-->> Add Student Record <<--"))
+    student_id = input("Enter Student ID:")
+    if check_student(student_id):
+        print("Student ID Already Exists\nTry Again..")
+        input("Press Any Key To Continue..")
+        Add_Student()
+
+    # Checking if student name exists or not
+    name = input("Enter Student Name:")
+    if check_student_name(name):
+        print("Student Already Exists\n Try Again..")
+        input("Press Any Key To Continue..")
+        Add_Student()
+
+    email_id = input("Enter Student Email ID:")
+    if re.fullmatch(email_regex, email_id):
+        print("Valid Email")
+    else:
+        print("Invalid Email")
+        input("Press Any Key To Continue..")
+        Update_Student()
+
+    phone_no = input("Enter Student Phone No:")
+    if phone_pattern.match(phone_no):
+        print("Valid Phone Number")
+    else:
+        print("Invalid Phone Number")
+        input("Press Any Key To Continue..")
+        Update_Student()
+
+    address = input("Enter Student Address:")
+    course = input("Enter Student Course:")
+    year = input("Enter Student Year:")
+
+    # Inserting student record
+    data = (student_id, name, email_id, phone_no, address, course, year)
+    sql = "INSERT INTO studentdata VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    cursor = con.cursor()
+    cursor.execute(sql, data)
+    con.commit()
+    print("Successfully Added Student Record")
+    input("Press Any Key To Continue..")
+    menu()
+
+# Function to check if a student with the given name exists
+def check_student_name(student_name):
+    sql = 'SELECT * FROM studentdata WHERE Name = %s'
+    cursor = con.cursor(buffered=True)
+    cursor.execute(sql, (student_name,))
+    return cursor.rowcount == 1
+
+# Function to check if a student with the given ID exists
+def check_student(student_id):
+    sql = 'SELECT * FROM studentdata WHERE Id = %s'
+    cursor = con.cursor(buffered=True)
+    cursor.execute(sql, (student_id,))
+    return cursor.rowcount == 1
+
+# Function to display students
+def Display_Student():
+    print("{:>60}".format("-->> Display Student Record <<--"))
+    sql = 'SELECT * FROM studentdata'
+    cursor = con.cursor()
+    cursor.execute(sql)
+    records = cursor.fetchall()
+    for record in records:
+        print("Student ID: ", record[0])
+        print("Student Name: ", record[1])
+        print("Student Email ID: ", record[2])
+        print("Student Phone No: ", record[3])
+        print("Student Address: ", record[4])
+        print("Student Course: ", record[5])
+        print("Student Year: ", record[6])
+        print("\n")
+    input("Press Any Key To Continue..")
+    menu()
+
+# Function to update student details
+def Update_Student():
+    print("{:>60}".format("-->> Update Student Record <<--"))
+    student_id = input("Enter Student ID:")
+    if not check_student(student_id):
+        print("Student ID Not Found\nTry Again..")
+        input("Press Any Key To Continue..")
+        menu()
+    else:
+        email_id = input("Enter Student Email ID:")
+        phone_no = input("Enter Student Phone No:")
+        address = input("Enter Student Address:")
+        
+        # Update student details
+        sql = 'UPDATE studentdata SET Email_Id = %s, Phone_no = %s, Address = %s WHERE Id = %s'
+        cursor = con.cursor()
+        cursor.execute(sql, (email_id, phone_no, address, student_id))
+        con.commit()
+        print("Student Record Updated")
+        input("Press Any Key To Continue..")
+        menu()
+
+# Function to search for a student
+def Search_Student():
+    print("{:>60}".format("-->> Search Student Record <<--"))
+    student_id = input("Enter Student ID:")
+    if not check_student(student_id):
+        print("Student Record Not Found\nTry Again..")
+        input("Press Any Key To Continue..")
+        menu()
+    else:
+        sql = 'SELECT * FROM studentdata WHERE Id = %s'
+        cursor = con.cursor()
+        cursor.execute(sql, (student_id,))
+        record = cursor.fetchone()
+        print("Student ID: ", record[0])
+        print("Student Name: ", record[1])
+        print("Student Email ID: ", record[2])
+        print("Student Phone No: ", record[3])
+        print("Student Address: ", record[4])
+        print("Student Course: ", record[5])
+        print("Student Year: ", record[6])
+        print("\n")
+    input("Press Any Key To Continue..")
+    menu()
+
+# Menu function
+def menu():
+    system("cls")
+    print("{:>60}".format(""))
+    print("{:>60}".format("-->> Student Management System <<--"))
+    print("{:>60}".format(""))
+    print("1. Add Student")
+    print("2. Display Student Record")
+    print("3. Update Student Record")
+    print("4. Search Student Record")
+    print("5. Exit\n")
+    print("{:>60}".format("-->> Choice Options: [1/2/3/4/5] <<--"))
+    ch = int(input("Enter your Choice:"))
+    if ch == 1:
+        system("cls")
+        Add_Student()
+    elif ch == 2:
+        system("cls")
+        Display_Student()
+    elif ch == 3:
+        system("cls")
+        Update_Student()
+    elif ch == 4:
+        system("cls")
+        Search_Student()
+    elif ch == 5:
+        system("cls")
+        print("{:>60}".format("Have A Nice Day"))
+        exit(0)
+    else:
+        print("Invalid Choice")
+        input("Press Any Key To Continue..")
+        menu()
+
+menu()
